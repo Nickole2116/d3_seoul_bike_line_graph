@@ -1,4 +1,6 @@
 <!DOCTYPE html>
+<meta charset="utf-8">
+<head>
 <style>
 
 .axis .domain {
@@ -6,102 +8,96 @@
 }
 
 </style>
-<body>
-    <h1 style="text-align: center;">Antibiotic Drug List ( Statistic View )</h1>
-    <svg width="1000" height="560"></svg>
+</head>
+<body style="width: 100%;margin-left:none;background-color:#173036">
+    <div style="width: 100%;background-color:#173036;color:#365b65;"><h1 style="text-align: center;font-family:Arial, Helvetica, sans-serif">Autumn Bike Renting Rates in Seoul</h1></div>
+    <div id="total_rented"></div>
 <script src="https://d3js.org/d3.v4.min.js"></script>
+<script src="https://d3js.org/d3.v4.js"></script>
+
 
 </body>
 
 <script>
 
-var svg = d3.select("svg"),
-    margin = {top: 20, right: 20, bottom: 30, left: 400},
-    width = +svg.attr("width") - margin.left - margin.right,
-    height = +svg.attr("height") - margin.top - margin.bottom,
-    g = svg.append("g").attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+  // set the dimensions and margins of the graph
+  var margin = {top: 10, right: 30, bottom: 30, left: 60},
+      width = 1000 - margin.left - margin.right,
+      full_width = 1000,
+      height = 400 - margin.top - margin.bottom,
+      full_height = 400;
 
-var y = d3.scaleBand()			// x = d3.scaleBand()	
-    .rangeRound([0, height])	// .rangeRound([0, width])
-    .paddingInner(0.05)
-    .align(0.1);
+  // append the svg object to the body of the page
+  var svg = d3.select("#total_rented")
+            .append("svg")
+              .attr("width", full_width)
+              .attr("height", full_height)
+            .append("g")
+              .attr("transform",
+                    "translate(" + margin.left + "," + margin.top + ")");
 
-var x = d3.scaleLinear()		// y = d3.scaleLinear()
-    .rangeRound([0, width]);	// .rangeRound([height, 0]);
+  var formatTime = d3.timeParse("%m/%d/%Y");
+  //load the dataset and generate it into variables
+  d3.csv("datas.csv",
+    function(d){
+      return { Date : formatTime(d.Date), rented_count : d.rented_count }
+    },
+    function(data){
 
-var z = d3.scaleOrdinal()
-    .range(["#4d5784", "#6f97b1", "#b7ded7", "#6b486b", "#a05d56", "#d0743c", "#ff8c00"]);
+      console.log(data);
 
-/*Load the CSV file as well and load into the array*/
-d3.csv("data.csv", function(d, i, columns) {
-  for (i = 1, t = 0; i < columns.length; ++i) t += d[columns[i]] = +d[columns[i]];
-  d.total = t;
-  return d;
-}, function(error, data) {
-  if (error) throw error;
+        // Max value observed:
+        const max = d3.max(data, function(d) { return +d.rented_count; })
 
-  var keys = data.columns.slice(1);
-  
+      var x = d3.scaleTime()
+        .domain(d3.extent(data, function(d) { return d.Date; }))
+        .range([ 0, width ]);
+      
+      svg.append("g")
+        .attr("transform", "translate(0," + height + ")")
+        .call(d3.axisBottom(x));
 
-  data.sort(function(a, b) { return b.total - a.total; });
-  y.domain(data.map(function(d) { 
-      return d.Bio; }));					// x.domain...
-  x.domain([0, d3.max(data, function(d) { return d.total; })]).nice();	// y.domain...
-  z.domain(keys);
+        // Add Y axis
+      var y = d3.scaleLinear()
+        .domain([0, max])
+        .range([ height, 0 ]);
 
-  g.append("g")
-    .selectAll("g")
-    .data(d3.stack().keys(keys)(data))
-    .enter().append("g")
-      .attr("fill", function(d) { return z(d.key); })
-    .selectAll("rect")
-    .data(function(d) { return d; })
-    .enter().append("rect")
-      .attr("y", function(d) { return y(d.data.Bio); })	    //.attr("x", function(d) { return x(d.data.State); })
-      .attr("x", function(d) { return x(d[0]); })			    //.attr("y", function(d) { return y(d[1]); })	
-      .attr("width", function(d) { return x(d[1]) - x(d[0]); })	//.attr("height", function(d) { return y(d[0]) - y(d[1]); })
-      .attr("height", y.bandwidth());						    //.attr("width", x.bandwidth());	
+      svg.append("g")
+        .call(d3.axisLeft(y));
 
-  g.append("g")
-      .attr("class", "axis")
-      .attr("transform", "translate(0,0)") 						//  .attr("transform", "translate(0," + height + ")")
-      .call(d3.axisLeft(y));									//   .call(d3.axisBottom(x));
+      
 
-  g.append("g")
-      .attr("class", "axis")
-	  .attr("transform", "translate(0,"+height+")")				// New line
-      .call(d3.axisBottom(x).ticks(null, "s"))					//  .call(d3.axisLeft(y).ticks(null, "s"))
-    .append("text")
-      .attr("y", 2)												//     .attr("y", 2)
-      .attr("x", x(x.ticks().pop()) + 0.5) 						//     .attr("y", y(y.ticks().pop()) + 0.5)
-      .attr("dy", "0.32em")										//     .attr("dy", "0.32em")
-      .attr("fill", "#000")
-      .attr("font-weight", "bold")
-      .attr("text-anchor", "start")
-      .text("Dosages of Drug")
-	  .attr("transform", "translate("+ (-width) +",-10)");   	// Newline
+        // Set the gradient
+      svg.append("linearGradient")
+        .attr("id", "line-gradient")
+        .attr("gradientUnits", "userSpaceOnUse")
+        .attr("x1", 0)
+        .attr("y1", y(0))
+        .attr("x2", 0)
+        .attr("y2", y(max))
+        .selectAll("stop")
+          .data([
+            {offset: "0%", color: "blue"},
+            {offset: "100%", color: "red"}
+          ])
+        .enter().append("stop")
+          .attr("offset", function(d) { return d.offset; })
+          .attr("stop-color", function(d) { return d.color; });
 
-  var legend = g.append("g")
-      .attr("font-family", "sans-serif")
-      .attr("font-size", 10)
-      .attr("text-anchor", "end")
-    .selectAll("g")
-    .data(keys.slice().reverse())
-    .enter().append("g")
-    //.attr("transform", function(d, i) { return "translate(0," + i * 20 + ")"; });
-	 .attr("transform", function(d, i) { return "translate(-50," + (300 + i * 20) + ")"; });
+          // Add the line
+        svg.append("path")
+          .datum(data)
+          .attr("fill", "none")
+          .attr("stroke", "url(#line-gradient)" )
+          .attr("stroke-width", 2)
+          .attr("d", d3.line()
+            .x(function(d) { return x(d.Date) })
+            .y(function(d) { return y(d.rented_count) })
+            )
 
-  legend.append("rect")
-      .attr("x", width - 19)
-      .attr("width", 19)
-      .attr("height", 19)
-      .attr("fill", z);
 
-  legend.append("text")
-      .attr("x", width - 24)
-      .attr("y", 9.5)
-      .attr("dy", "0.32em")
-      .text(function(d) { return d; });
-});
+    })
+
+
 
 </script>
