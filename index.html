@@ -1,16 +1,49 @@
 <!DOCTYPE html>
 <meta charset="utf-8">
 <head>
+  <title>Seoul Bike Rented Statistic</title>
+  <link href="./styles.css" type="text/css">
 <style>
 
 .axis .domain {
   display: none;
 }
 
+.stop-left 
+{
+  stop-color: #3f51b5;  /* Indigo */
+}
+
+.stop-right 
+{
+  stop-color: #009688;  /* Teal */
+}
+
+.axis-orange line{
+  stroke: #3d6470;
+}
+
+.axis-orange path{
+  stroke: #3d6470;
+}
+
+.axis-orange text{
+  fill: #3d6470;
+}  
+.axis-grid line {
+  stroke: #345862;
+}
+
 </style>
 </head>
 <body style="width: 100%;margin-left:none;background-color:#173036">
     <div style="width: 100%;background-color:#173036;color:#365b65;"><h1 style="text-align: center;font-family:Arial, Helvetica, sans-serif">Autumn Bike Renting Rates in Seoul</h1></div>
+    <div style="text-align: center;">
+      <select>
+        <option>Monthly Renting Rates</option>
+        <option>Last 2 Weeks Renting Rates</option>
+      </select>
+    </div>
     <div id="total_rented"></div>
 <script src="https://d3js.org/d3.v4.min.js"></script>
 <script src="https://d3js.org/d3.v4.js"></script>
@@ -24,8 +57,8 @@
   var margin = {top: 10, right: 30, bottom: 30, left: 60},
       width = 1000 - margin.left - margin.right,
       full_width = 1000,
-      height = 400 - margin.top - margin.bottom,
-      full_height = 400;
+      height = 200 - margin.top - margin.bottom,
+      full_height = 200;
 
   // append the svg object to the body of the page
   var svg = d3.select("#total_rented")
@@ -36,11 +69,12 @@
               .attr("transform",
                     "translate(" + margin.left + "," + margin.top + ")");
 
-  var formatTime = d3.timeParse("%m/%d/%Y");
+  var formatTime = d3.timeParse("%m/%d/%Y %H:%M:%S");
   //load the dataset and generate it into variables
   d3.csv("datas.csv",
     function(d){
-      return { Date : formatTime(d.Date), rented_count : d.rented_count }
+      var fulldate = d.Date + " "+d.Hour+":20:00";
+      return { Date : formatTime(fulldate), rented_count : d.rented_count }
     },
     function(data){
 
@@ -52,18 +86,32 @@
       var x = d3.scaleTime()
         .domain(d3.extent(data, function(d) { return d.Date; }))
         .range([ 0, width ]);
-      
+
+        //tick the gridline of x axis
       svg.append("g")
+        .attr('class', 'x axis-grid')
         .attr("transform", "translate(0," + height + ")")
-        .call(d3.axisBottom(x));
+        .call(d3.axisBottom(x).tickSize(-height).tickFormat('').ticks(10));
+
+      // Add x AXIS
+      svg.append("g")
+        .attr("class", "axis-orange")
+        .attr("transform", "translate(0," + height + ")")
+        .call(d3.axisBottom(x).ticks(10));
 
         // Add Y axis
       var y = d3.scaleLinear()
         .domain([0, max])
         .range([ height, 0 ]);
 
+        //tick the gridline of y-axis
       svg.append("g")
-        .call(d3.axisLeft(y));
+        .attr('class', 'y axis-grid')
+        .call(d3.axisLeft(y).tickSize(-width).tickFormat('').ticks(10));
+
+      svg.append("g")
+        .attr("class", "axis-orange")
+        .call(d3.axisLeft(y).ticks(10));
 
       
 
@@ -72,17 +120,18 @@
         .attr("id", "line-gradient")
         .attr("gradientUnits", "userSpaceOnUse")
         .attr("x1", 0)
-        .attr("y1", y(0))
-        .attr("x2", 0)
-        .attr("y2", y(max))
+        .attr("y1", 0)
+        .attr("x2", "100%")
+        .attr("y2", 0)
         .selectAll("stop")
           .data([
-            {offset: "0%", color: "blue"},
-            {offset: "100%", color: "red"}
+            {offset: "0%", color: "#ca5490"},
+            {offset: "50%", color: "#f7a344"},
+            {offset: "100%", color: "#ef686f"}
           ])
-        .enter().append("stop")
-          .attr("offset", function(d) { return d.offset; })
-          .attr("stop-color", function(d) { return d.color; });
+          .enter().append("stop")
+            .attr("offset", function(d) { return d.offset; })
+            .attr("stop-color", function(d) { return d.color; });
 
           // Add the line
         svg.append("path")
@@ -94,7 +143,6 @@
             .x(function(d) { return x(d.Date) })
             .y(function(d) { return y(d.rented_count) })
             )
-
 
     })
 
