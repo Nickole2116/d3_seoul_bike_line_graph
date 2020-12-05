@@ -45,6 +45,8 @@
       </select>
     </div>
     <div id="total_rented"></div>
+    <div id="temperature"></div>
+    <div id="pie-function"></div>
 <script src="https://d3js.org/d3.v4.min.js"></script>
 <script src="https://d3js.org/d3.v4.js"></script>
 
@@ -74,12 +76,14 @@
   d3.csv("datas.csv",
     function(d){
       var fulldate = d.Date + " "+d.Hour+":20:00";
-      return { Date : formatTime(fulldate), rented_count : d.rented_count }
+      return { Date : formatTime(fulldate), rented_count : d.rented_count, functioning : d.Functioning, Temperature : d.Temperature }
     },
     function(data){
 
-      console.log(data);
-
+      console.log(data[1]);
+        //---------------------------------------------------------------
+        // Rented Rates - line graphs
+        //---------------------------------------------------------------
         // Max value observed:
         const max = d3.max(data, function(d) { return +d.rented_count; })
 
@@ -142,10 +146,155 @@
           .attr("d", d3.line()
             .x(function(d) { return x(d.Date) })
             .y(function(d) { return y(d.rented_count) })
-            )
+          )
+          .on("mouseover", mouseover)
+          .on("mouseout", mouseOut)
+          .on("mousemove", mousemove);
 
-    })
+          var tooltip = d3.select("body").append("div")
+            .style("z-index","10").style("visibility","hidden").style("margin-left","20px").style("color","#9badb2").text("a simple tooltips");
+            var bisectDate = d3.bisector(function(d){
+              return d.Date;
+            }).left;
 
+          function mouseover()
+          {
+            d3.select(this)
+            .transition()
+            .duration(500)
+            .attr('stroke-width',4);
+
+            
+
+
+            
+          }
+
+          function mouseOut()
+          {
+            d3.select(this)
+            .transition()
+            .duration(500)
+            .attr('stroke-width',2);
+
+            return tooltip.style("visibility","hidden");
+
+            
+          }
+
+          function mousemove()
+          {
+            
+            var x0 = x.invert(d3.mouse(this)[0]),
+            i = bisectDate(data,x0,1),
+            d0 = data[i-1],
+            d1 =data[i],
+            d = x0 - d0.Date > d1.Date - x0 ? d1 :d0;
+            console.log(d.Date);
+            console.log(d.rented_count);
+
+            tooltip.text("Rented : "+d.rented_count+"("+d.Date+")");
+            return tooltip.style("visibility","visible");
+
+            tooltip.style("top",(d3.event.pageY-10)+"px")
+            .style("left",(d3.event.pageX+10)+"px")
+            .style("background","red");
+
+
+            
+          }
+
+            
+
+        //-----------------------------------------------------------
+        // END line graph 
+        //-----------------------------------------------------------
+
+          //var function 
+          var all_count_data = data.length;
+          var count_functioning_func = 0;
+          for(var c=0;c<all_count_data;c++)
+          {
+            count_functioning_func += parseInt(data[c].functioning);
+          }
+          var non_func_counts = all_count_data - count_functioning_func;
+
+          console.log(non_func_counts);
+
+        var data_pie = [non_func_counts, count_functioning_func];
+
+          var width_pie = "200";
+          var height_pie = "200";
+          var svg_pie = d3.select("#pie-function")
+                        .append("svg")
+                        .attr("height",width_pie+"px")
+                        .attr("width",height_pie+"px");
+          var radius = Math.min(width_pie,height_pie) / 3;
+          var t = svg_pie.append("g").attr("transform","translate("+ width_pie / 2 + ","+ height_pie / 2 +")");
+
+          var color_pie = d3.scaleOrdinal(['#365b65','#f7a642','#365b65']);
+        
+        // Generate the pie
+    var pie = d3.pie();
+
+// Generate the arcs
+var arc = d3.arc()
+            .innerRadius(0)
+            .outerRadius(radius);
+
+            //Generate groups
+    var arcs = t.selectAll("arc")
+                .data(pie(data_pie))
+                .enter()
+                .append("g")
+                .attr("class", "arc")
+
+    //Draw arc paths
+    arcs.append("path")
+        .attr("fill", function(d, i) {
+            return color_pie(i);
+        })
+        .attr("d", arc);
+
+/*
+End of Pie Chart
+*/
+
+/**
+Start of Other Line graphs
+*/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        /*var svg2 = d3.selectAll("#pie-function")
+            .append("text")
+              .attr("width", full_width)
+              .attr("height", full_height)
+                            .text( data.length);*/
+
+              //.text( data[1].functioning);
+
+              
+       
+    });
+
+    
 
 
 </script>

@@ -1,4 +1,4 @@
-Date,rented_count,Hour,Temperature(°C),Humidity(%),Wind speed (m/s),Visibility (10m),Solar Radiation (MJ/m2),Rainfall(mm),Snowfall (cm),Holiday,Functioning Day,Seasons,,
+Date,rented_count,Hour,Temperature,Humidity,Wind speed (m/s),Visibility (10m),Solar Radiation (MJ/m2),Rainfall(mm),Snowfall (cm),Holiday,Functioning,Seasons,,
 09/01/2018,1075,0,23.2,83,0.5,1887,0,0,0,0,1,Autumn,,
 09/01/2018,975,1,22.7,83,0.1,1940,0,0,0,0,1,Autumn,,
 09/01/2018,785,2,22,86,0.4,1703,0,0,0,0,1,Autumn,,
