@@ -38,15 +38,18 @@
 </head>
 <body style="width: 100%;margin-left:none;background-color:#173036">
     <div style="width: 100%;background-color:#173036;color:#365b65;"><h1 style="text-align: center;font-family:Arial, Helvetica, sans-serif">Autumn Bike Renting Rates in Seoul</h1></div>
-    
+    <div style="text-align: left;"><small style="width: 100%;color: #3d6470;text-align: left;">Bike Rented Per Day</small></div>
     <div id="total_rented"></div>
     <div id="tooltip_rented"></div>
     <div style="text-align: center;">
       <select id="selectbutton"></select>
     </div>
+    <div style="text-align: left;"><small style="width: 100%;color: #3d6470;text-align: left;padding-left: 10px;">Humidity (%)</small></div>
     <div id="temperature"></div>
     <div id="tooltip_temperature"></div>
     <div id="pie-function"></div>
+    <br>
+    <div id="final-ending" style="color: aliceblue;text-align: center;"></div>
 <script src="https://d3js.org/d3.v4.min.js"></script>
 <script src="https://d3js.org/d3.v4.js"></script>
 
@@ -77,18 +80,16 @@
   d3.csv("datas_a2.csv",
     function(d){
       var fulldate = d.Date + " "+d.Hour+":20:00";
-      //d.temperature = parseFloat(d.temperature);
       var humans = d.Humidity;
-      return { Date : formatTime(fulldate), rented_count : d.rented_count, functioning : d.Functioning, Temperature : d.temperature, Human : humans, Holiday : d.Holiday, Seasons : d.Seasons}
+      return { Date : formatTime(fulldate), rented_count : d.rented_count, functioning : d.Functioning, holiday : d.Holiday, Temperature : d.temperature, Human : humans, Holiday : d.Holiday, Seasons : d.Seasons}
     },
     function(data){
 
-      var allGroup = ["All Humality", "Humality of First Month"]
+      var allGroup = ["All Humidity", "Humidity of First Month"]
 
       d3.select("#selectbutton").selectAll('myOptions').data(allGroup).enter().append('option')
           .text(function(d){return d;}).attr("value",function(d){return d;})
 
-      //console.log(data[0]);
         //---------------------------------------------------------------
         // Rented Rates - line graphs
         //---------------------------------------------------------------
@@ -96,127 +97,123 @@
         const max = d3.max(data, function(d) { return +d.rented_count; })
         const max_human = d3.max(data, function(d) { return +d.Humidity; })
 
-      var x = d3.scaleTime()
-        .domain(d3.extent(data, function(d) { return d.Date; }))
-        .range([ 0, width ]);
+        var x = d3.scaleTime()
+          .domain(d3.extent(data, function(d) { return d.Date; }))
+          .range([ 0, width ]);
 
         //tick the gridline of x axis
-      svg.append("g")
-        .attr('class', 'x axis-grid')
-        .attr("transform", "translate(0," + height + ")")
-        .call(d3.axisBottom(x).tickSize(-height).tickFormat('').ticks(10));
+        svg.append("g")
+          .attr('class', 'x axis-grid')
+          .attr("transform", "translate(0," + height + ")")
+          .call(d3.axisBottom(x).tickSize(-height).tickFormat('').ticks(10));
 
-      // Add x AXIS
-      svg.append("g")
-        .attr("class", "axis-orange")
-        .attr("transform", "translate(0," + height + ")")
-        .call(d3.axisBottom(x).ticks(10));
+        // Add x AXIS
+        svg.append("g")
+          .attr("class", "axis-orange")
+          .attr("transform", "translate(0," + height + ")")
+          .call(d3.axisBottom(x).ticks(10));
 
         // Add Y axis
-      var y = d3.scaleLinear()
-        .domain([0, max])
-        .range([ height, 0 ]);
+        var y = d3.scaleLinear()
+          .domain([0, max])
+          .range([ height, 0 ]);
 
         //tick the gridline of y-axis
-      svg.append("g")
-        .attr('class', 'y axis-grid')
-        .call(d3.axisLeft(y).tickSize(-width).tickFormat('').ticks(10));
+        svg.append("g")
+          .attr('class', 'y axis-grid')
+          .call(d3.axisLeft(y).tickSize(-width).tickFormat('').ticks(10));
 
-      svg.append("g")
-        .attr("class", "axis-orange")
-        .call(d3.axisLeft(y).ticks(10));
+        svg.append("g")
+          .attr("class", "axis-orange")
+          .call(d3.axisLeft(y).ticks(10));
 
       
 
         // Set the gradient
-      svg.append("linearGradient")
-        .attr("id", "line-gradient")
-        .attr("gradientUnits", "userSpaceOnUse")
-        .attr("x1", 0)
-        .attr("y1", 0)
-        .attr("x2", "100%")
-        .attr("y2", 0)
-        .selectAll("stop")
-          .data([
-            {offset: "0%", color: "#ca5490"},
-            {offset: "50%", color: "#f7a344"},
-            {offset: "100%", color: "#ef686f"}
-          ])
-          .enter().append("stop")
-            .attr("offset", function(d) { return d.offset; })
-            .attr("stop-color", function(d) { return d.color; });
+        svg.append("linearGradient")
+          .attr("id", "line-gradient")
+          .attr("gradientUnits", "userSpaceOnUse")
+          .attr("x1", 0)
+          .attr("y1", 0)
+          .attr("x2", "100%")
+          .attr("y2", 0)
+          .selectAll("stop")
+            .data([
+              {offset: "0%", color: "#ca5490"},
+              {offset: "50%", color: "#f7a344"},
+              {offset: "100%", color: "#ef686f"}
+            ])
+            .enter().append("stop")
+              .attr("offset", function(d) { return d.offset; })
+              .attr("stop-color", function(d) { return d.color; });
 
-          // Add the line
-        svg.append("path")
-          .datum(data)
-          .attr("fill", "none")
-          .attr("stroke", "url(#line-gradient)" )
-          .attr("stroke-width", 2)
-          .attr("d", d3.line()
-            .x(function(d) { return x(d.Date) })
-            .y(function(d) { return y(d.rented_count) })
-          )
-          .on("mouseover", mouseover)
-          .on("mouseout", mouseOut)
-          .on("mousemove", mousemove);
+            // Add the line
+          svg.append("path")
+            .datum(data)
+            .attr("fill", "none")
+            .attr("stroke", "url(#line-gradient)" )
+            .attr("stroke-width", 2)
+            .attr("d", d3.line()
+              .x(function(d) { return x(d.Date) })
+              .y(function(d) { return y(d.rented_count) })
+            )
+            .on("mouseover", mouseover)
+            .on("mouseout", mouseOut)
+            .on("mousemove", mousemove);
 
-          var tooltip = d3.select("#tooltip_rented").append("div")
-            .style("z-index","10").style("visibility","hidden").style("margin-left","20px").style("color","#9badb2").text("a simple tooltips");
-            var bisectDate = d3.bisector(function(d){
-              return d.Date;
-            }).left;
+            var tooltip = d3.select("#tooltip_rented").append("div")
+              .style("z-index","10").style("visibility","hidden").style("margin-left","20px").style("color","#9badb2").text("a simple tooltips");
+              var bisectDate = d3.bisector(function(d){
+                return d.Date;
+              }).left;
 
-          function mouseover()
-          {
-            d3.select(this)
-            .transition()
-            .duration(500)
-            .attr('stroke-width',4);
+            function mouseover()
+            {
+              d3.select(this)
+              .transition()
+              .duration(500)
+              .attr('stroke-width',4);
 
-            
+            }
 
+            function mouseOut()
+            {
+              d3.select(this)
+              .transition()
+              .duration(500)
+              .attr('stroke-width',2);
 
-            
-          }
+              return tooltip.style("visibility","hidden");
 
-          function mouseOut()
-          {
-            d3.select(this)
-            .transition()
-            .duration(500)
-            .attr('stroke-width',2);
+              
+            }
 
-            return tooltip.style("visibility","hidden");
+            function mousemove()
+            {
+              
+              var x0 = x.invert(d3.mouse(this)[0]),
+              i = bisectDate(data,x0,1),
+              d0 = data[i-1],
+              d1 =data[i],
+              d = x0 - d0.Date > d1.Date - x0 ? d1 :d0;
+              console.log(d.Date);
+              console.log(d.rented_count);
 
-            
-          }
+              tooltip.text("Rented : "+d.rented_count+"("+d.Date+")");
+              return tooltip.style("visibility","visible");
 
-          function mousemove()
-          {
-            
-            var x0 = x.invert(d3.mouse(this)[0]),
-            i = bisectDate(data,x0,1),
-            d0 = data[i-1],
-            d1 =data[i],
-            d = x0 - d0.Date > d1.Date - x0 ? d1 :d0;
-            console.log(d.Date);
-            console.log(d.rented_count);
-
-            tooltip.text("Rented : "+d.rented_count+"("+d.Date+")");
-            return tooltip.style("visibility","visible");
-
-            tooltip.style("top",(d3.event.pageY-10)+"px")
-            .style("left",(d3.event.pageX+10)+"px")
-            .style("background","red");
+              tooltip.style("top",(d3.event.pageY-10)+"px")
+              .style("left",(d3.event.pageX+10)+"px")
+              .style("background","red");
 
 
-            
-          }
+              
+            }
 
             
 
         //-----------------------------------------------------------
-        // END line graph 
+        // END line graph / Start Pie Chart
         //-----------------------------------------------------------
 
           //var function 
@@ -229,450 +226,442 @@
             count_functioning_func += parseInt(data[c].functioning);
           }
           var non_func_counts = all_count_data - count_functioning_func;
-
-          console.log(non_func_counts);
-
-        var data_pie = [non_func_counts, count_functioning_func];
-
+          var data_pie = [non_func_counts, count_functioning_func];
           var width_pie = "200";
           var height_pie = "200";
+
+
           var svg_pie = d3.select("#pie-function")
                         .append("svg")
                         .attr("height",width_pie+"px")
                         .attr("width",height_pie+"px");
           var radius = Math.min(width_pie,height_pie) / 3;
           var t = svg_pie.append("g").attr("transform","translate("+ width_pie / 2 + ","+ height_pie / 2 +")");
-
           var color_pie = d3.scaleOrdinal(['#365b65','#f7a642','#365b65']);
         
-        // Generate the pie
-    var pie = d3.pie();
+          // Generate the pie
+          var pie = d3.pie();
 
-// Generate the arcs
-var arc = d3.arc()
+          // Generate the arcs
+          var arc = d3.arc()
+                      .innerRadius(0)
+                      .outerRadius(radius);
+
+            //Generate groups
+          var arcs = t.selectAll("arc")
+                      .data(pie(data_pie))
+                      .enter()
+                      .append("g")
+                      .attr("class", "arc")
+
+          //Draw arc paths
+          arcs.append("path")
+              .attr("fill", function(d, i) {
+                  return color_pie(i);
+              })
+              .attr("d", arc);
+
+          /*----------------------------------
+          End of Pie Chart / Legend Function 
+          ------------------------------------*/
+
+          var legend = d3.selectAll("#pie-function").append("svg");
+          legend.append("circle").attr("cx",20).attr("cy",50).attr("r", 6).style("fill", "#f7a642")
+          legend.append("text").attr("x", 50).attr("y", 50).text("Functional Day ("+(count_functioning_func/per_cent).toFixed(2)+"%)").style("font-size", "15px").style("fill","white").attr("alignment-baseline","middle")
+
+          legend.append("circle").attr("cx",20).attr("cy",80).attr("r", 6).style("fill", "#365b65")
+          legend.append("text").attr("x", 50).attr("y", 80).text("Non-Functional Day ("+(100-(count_functioning_func/per_cent)).toFixed(2)+"%)").style("font-size", "15px").style("fill","white").attr("alignment-baseline","middle")
+
+          /*---------------------------------------
+          End of Legend Function / other Pie Chart
+          ----------------------------------------*/
+
+          var count_holiday_func = 0;
+          var per_cent_holiday = all_count_data /100;
+          for(var c=0;c<all_count_data;c++)
+          {
+            count_holiday_func += parseInt(data[c].holiday);
+          }
+          var count_no_holiday = all_count_data - count_holiday_func; 
+          var holiday_percent = count_holiday_func/per_cent_holiday;
+          var non_holiday_counts = all_count_data - holiday_percent; 
+          var percent_no = 100 - holiday_percent;
+          var data_pie = [count_no_holiday,count_holiday_func];
+          var width_pie = "200";
+          var height_pie = "200";
+
+
+          var svg_pie = d3.select("#pie-function")
+                        .append("svg")
+                        .attr("height",width_pie+"px")
+                        .attr("width",height_pie+"px");
+          var radius = Math.min(width_pie,height_pie) / 3;
+          var t = svg_pie.append("g").attr("transform","translate("+ width_pie / 2 + ","+ height_pie / 2 +")");
+          var color_pie = d3.scaleOrdinal(['#365b65','#ea5495','#365b65']);
+
+          // Generate the pie
+          var pie = d3.pie();
+
+          // Generate the arcs
+          var arc = d3.arc()
             .innerRadius(0)
             .outerRadius(radius);
 
             //Generate groups
-    var arcs = t.selectAll("arc")
+          var arcs = t.selectAll("arc")
                 .data(pie(data_pie))
                 .enter()
                 .append("g")
                 .attr("class", "arc")
 
-    //Draw arc paths
-    arcs.append("path")
-        .attr("fill", function(d, i) {
+          //Draw arc paths
+          arcs.append("path")
+          .attr("fill", function(d, i) {
             return color_pie(i);
-        })
-        .attr("d", arc);
+          })
+          .attr("d", arc);
 
-/*
-End of Pie Chart
-*/
+          /*-------------------------------
+          End of Pie chart / Start Legend Function
+          ---------------------------------*/
 
-var legend = d3.selectAll("#pie-function").append("svg");
-              legend.append("circle").attr("cx",20).attr("cy",50).attr("r", 6).style("fill", "#f7a642")
-              legend.append("text").attr("x", 50).attr("y", 50).text("Functional Day ("+(count_functioning_func/per_cent).toFixed(2)+"% )").style("font-size", "15px").style("fill","white").attr("alignment-baseline","middle")
+          var legend = d3.selectAll("#pie-function").append("svg");
+          legend.append("circle").attr("cx",20).attr("cy",50).attr("r", 6).style("fill", "#ea5495")
+          legend.append("text").attr("x", 50).attr("y", 50).text("Functional Day ("+holiday_percent.toFixed(2)+"%)").style("font-size", "15px").style("fill","white").attr("alignment-baseline","middle")
 
+          legend.append("circle").attr("cx",20).attr("cy",80).attr("r", 6).style("fill", "#365b65")
+          legend.append("text").attr("x", 50).attr("y", 80).text("Non-Functional Day ("+percent_no.toFixed(2)+"%)").style("font-size", "15px").style("fill","white").attr("alignment-baseline","middle")
 
-
-
-
-        var svg2 = d3.selectAll("#pie-function")
-            .append("text")
-              .attr("width", full_width)
-              .attr("height", full_height)
-                            .text( data.length);
-
-              //.text( data[1].functioning);
-
-
-
-
-
-
-
-
-
-
-
+          /*------------------------------------
+          End of Legend Function / Start Point Area Chart
+          -------------------------------------
+          
+          */
 
 
               // append the svg object to the body of the page
-var svg3 = d3.select("#temperature")
-  .append("svg")
-    .attr("width", width + margin.left + margin.right)
-    .attr("height", height + margin.top + margin.bottom)
-    .append("g")
-    .attr("fill","white")
-    .attr("transform",
-          "translate(" + margin.left + "," + margin.top + ")");
+              var svg3 = d3.select("#temperature")
+                .append("svg")
+                  .attr("width", width + margin.left + margin.right)
+                  .attr("height", height + margin.top + margin.bottom)
+                  .append("g")
+                  .attr("fill","white")
+                  .attr("transform",
+                        "translate(" + margin.left + "," + margin.top + ")");
 
-var formatTime = d3.timeParse("%m/%d/%Y %H:%M:%S");
+              var formatTime = d3.timeParse("%m/%d/%Y %H:%M:%S");
 
-//Read the data
-d3.csv("datas_a2.csv",
+              //Read the data
+              d3.csv("datas_a2.csv",
 
-  // When reading the csv, I must format variables:
-  function(d){
-    var fulldate = d.Date + " "+d.Hour+":20:00";
-      //d.temperature = parseFloat(d.temperature);
-      var humans = d.Humidity;
-    return { date : formatTime(fulldate), value : d.Humidity }
-  },
+                // When reading the csv, I must format variables:
+                function(d){
+                  var fulldate = d.Date + " "+d.Hour+":20:00";
+                    //d.temperature = parseFloat(d.temperature);
+                    var humans = d.Humidity;
+                  return { date : formatTime(fulldate), value : d.Humidity }
+                },
 
-  // Now I can use this dataset:
-  function(data) {
-    console.log(data);
+                // Now I can use this dataset:
+                function(data) {
 
-    // Keep only the 90 first rows
-    data = data.filter(function(d,i){ return i<data.length})
-    data_first = data.filter(function(d,i){ return i<720})
+                  // Keep only the full rows or 720 rows
+                  data = data.filter(function(d,i){ return i<data.length})
+                  data_first = data.filter(function(d,i){ return i<720})
 
-    d3.select("#selectbutton").on("change", function(d){
-  //recover the option that been chosen
-  var selectedOption = d3.select(this).property("value")
+                  d3.select("#selectbutton").on("change", function(d){
+                    //recover the option that been chosen
+                    var selectedOption = d3.select(this).property("value")
 
-  update(selectedOption)
-})
+                    update(selectedOption)
+                  })
+                  //if dropdownlist selected 
+                    function update(selectedOption)
+                    {
+                      //if selected all
+                      if(selectedOption == "All Humidity")
+                      {
+                        d3.select("#temperature").html("");
 
-function update(selectedOption)
-{
+                              var svg3 = d3.select("#temperature")
+                            .append("svg")
+                              .attr("width", width + margin.left + margin.right)
+                              .attr("height", height + margin.top + margin.bottom)
+                              .append("g")
+                              .attr("fill","white")
+                              .attr("transform",
+                                    "translate(" + margin.left + "," + margin.top + ")");
+                              
+                          // Add X axis --> it is a date format
+                          var x = d3.scaleTime()
+                                .domain(d3.extent(data, function(d) { return d.date; }))
+                                .range([ 0, width ]);
+                              svg3.append("g")
+                              .attr("stroke","#3d6470")
+                                .attr("transform", "translate(0," + (height+5) + ")")
+                                .call(d3.axisBottom(x).ticks(5).tickSizeOuter(0));
 
-  if(selectedOption == "All Humality")
-  {
-    d3.select("#temperature").html("");
+                              // Add Y axis
+                              var y = d3.scaleLinear()
+                                .domain( d3.extent(data, function(d) { return +d.value; }) )
+                                .range([ height, 0 ]);
+                              svg3.append("g")
+                                .attr("stroke","#3d6470")
+                                .attr("transform", "translate(-5,0)")
+                                .call(d3.axisLeft(y).tickSizeOuter(0));
 
-          var svg3 = d3.select("#temperature")
-        .append("svg")
-          .attr("width", width + margin.left + margin.right)
-          .attr("height", height + margin.top + margin.bottom)
-          .append("g")
-          .attr("fill","white")
-          .attr("transform",
-                "translate(" + margin.left + "," + margin.top + ")");
-          
-      // Add X axis --> it is a date format
-      var x = d3.scaleTime()
-            .domain(d3.extent(data, function(d) { return d.date; }))
-            .range([ 0, width ]);
-          svg3.append("g")
-          .attr("stroke","#3d6470")
-            .attr("transform", "translate(0," + (height+5) + ")")
-            .call(d3.axisBottom(x).ticks(5).tickSizeOuter(0));
-
-          // Add Y axis
-          var y = d3.scaleLinear()
-            .domain( d3.extent(data, function(d) { return +d.value; }) )
-            .range([ height, 0 ]);
-          svg3.append("g")
-            .attr("stroke","#3d6470")
-            .attr("transform", "translate(-5,0)")
-            .call(d3.axisLeft(y).tickSizeOuter(0));
-
-          // Add the area
-          svg3.append("path")
-            .datum(data)
-            .attr("fill", "#365b65")
-            .attr("fill-opacity", .3)
-            .attr("stroke", "none")
-            .attr("d", d3.area()
-              .x(function(d) { return x(d.date) })
-              .y0( height )
-              .y1(function(d) { return y(d.value) })
-              )
-
-
-          // Add the line
-          svg3.append("path")
-            .datum(data)
-            .attr("fill", "none")
-            .attr("stroke", "none")
-            .attr("stroke-width", 4)
-            .attr("d", d3.line()
-              .x(function(d) { return x(d.date) })
-              .y(function(d) { return y(d.value) })
-              );
+                              // Add the area
+                              svg3.append("path")
+                                .datum(data)
+                                .attr("fill", "#365b65")
+                                .attr("fill-opacity", .3)
+                                .attr("stroke", "none")
+                                .attr("d", d3.area()
+                                  .x(function(d) { return x(d.date) })
+                                  .y0( height )
+                                  .y1(function(d) { return y(d.value) })
+                                  )
 
 
-
-          // Add the line
-          svg3.selectAll("myCircles")
-            .data(data)
-            .enter()
-            .append("circle")
-              .attr("fill", "#24b9f2")
-              .attr("stroke", "none")
-              .attr("cx", function(d) { return x(d.date) })
-              .attr("cy", function(d) { return y(d.value) })
-              .attr("r", 1.5)
-              .on("mouseover", mouseover)
-                .on("mouseout", mouseOut)
-                .on("mousemove", mousemove);
-
-  }else if(selectedOption == "Humality of First Month")
-  {
-          d3.select("#temperature").html("");
-
-      var svg3 = d3.select("#temperature")
-      .append("svg")
-      .attr("width", width + margin.left + margin.right)
-      .attr("height", height + margin.top + margin.bottom)
-      .append("g")
-      .attr("fill","white")
-      .attr("transform",
-            "translate(" + margin.left + "," + margin.top + ")");
-
-
-             // Add X axis --> it is a date format
-    var x = d3.scaleTime()
-      .domain(d3.extent(data_first, function(d) { return d.date; }))
-      .range([ 0, width ]);
-    svg3.append("g")
-    .attr("stroke","#3d6470")
-      .attr("transform", "translate(0," + (height+5) + ")")
-      .call(d3.axisBottom(x).ticks(5).tickSizeOuter(0));
-
-    // Add Y axis
-    var y = d3.scaleLinear()
-      .domain( d3.extent(data_first, function(d) { return +d.value; }) )
-      .range([ height, 0 ]);
-    svg3.append("g")
-      .attr("stroke","#3d6470")
-      .attr("transform", "translate(-5,0)")
-      .call(d3.axisLeft(y).tickSizeOuter(0));
-
-    // Add the area
-    svg3.append("path")
-      .datum(data_first)
-      .attr("fill", "#365b65")
-      .attr("fill-opacity", .3)
-      .attr("stroke", "none")
-      .attr("d", d3.area()
-        .x(function(d) { return x(d.date) })
-        .y0( height )
-        .y1(function(d) { return y(d.value) })
-        )
-
-
-    // Add the line
-    svg3.append("path")
-      .datum(data_first)
-      .attr("fill", "none")
-      .attr("stroke", "none")
-      .attr("stroke-width", 4)
-      .attr("d", d3.line()
-        .x(function(d) { return x(d.date) })
-        .y(function(d) { return y(d.value) })
-        );
+                              // Add the line
+                              svg3.append("path")
+                                .datum(data)
+                                .attr("fill", "none")
+                                .attr("stroke", "none")
+                                .attr("stroke-width", 4)
+                                .attr("d", d3.line()
+                                  .x(function(d) { return x(d.date) })
+                                  .y(function(d) { return y(d.value) })
+                                  );
 
 
 
-    // Add the line
-    svg3.selectAll("myCircles")
-      .data(data_first)
-      .enter()
-      .append("circle")
-        .attr("fill", "#24b9f2")
-        .attr("stroke", "none")
-        .attr("cx", function(d) { return x(d.date) })
-        .attr("cy", function(d) { return y(d.value) })
-        .attr("r", 1.5)
-        .on("mouseover", mouseover)
-          .on("mouseout", mouseOut)
-          .on("mousemove", mousemove);
+                              // Add the line
+                              svg3.selectAll("myCircles")
+                                .data(data)
+                                .enter()
+                                .append("circle")
+                                  .attr("fill", "#24b9f2")
+                                  .attr("stroke", "none")
+                                  .attr("cx", function(d) { return x(d.date) })
+                                  .attr("cy", function(d) { return y(d.value) })
+                                  .attr("r", 1.5)
+                                  .on("mouseover", mouseover)
+                                    .on("mouseout", mouseOut)
+                                    .on("mousemove", mousemove);
 
-          
+                      }else if(selectedOption == "Humidity of First Month")
+                      {
+                              d3.select("#temperature").html("");
 
-
-  }
-
-}
-
-    //update_first()
-    update_second()
-
-    function update_second()
-    {
-       // Add X axis --> it is a date format
-    var x = d3.scaleTime()
-      .domain(d3.extent(data, function(d) { return d.date; }))
-      .range([ 0, width ]);
-    svg3.append("g")
-    .attr("stroke","#3d6470")
-      .attr("transform", "translate(0," + (height+5) + ")")
-      .call(d3.axisBottom(x).ticks(5).tickSizeOuter(0));
-
-    // Add Y axis
-    var y = d3.scaleLinear()
-      .domain( d3.extent(data, function(d) { return +d.value; }) )
-      .range([ height, 0 ]);
-    svg3.append("g")
-      .attr("stroke","#3d6470")
-      .attr("transform", "translate(-5,0)")
-      .call(d3.axisLeft(y).tickSizeOuter(0));
-
-    // Add the area
-    svg3.append("path")
-      .datum(data)
-      .attr("fill", "#365b65")
-      .attr("fill-opacity", .3)
-      .attr("stroke", "none")
-      .attr("d", d3.area()
-        .x(function(d) { return x(d.date) })
-        .y0( height )
-        .y1(function(d) { return y(d.value) })
-        )
+                          var svg3 = d3.select("#temperature")
+                          .append("svg")
+                          .attr("width", width + margin.left + margin.right)
+                          .attr("height", height + margin.top + margin.bottom)
+                          .append("g")
+                          .attr("fill","white")
+                          .attr("transform",
+                                "translate(" + margin.left + "," + margin.top + ")");
 
 
-    // Add the line
-    svg3.append("path")
-      .datum(data)
-      .attr("fill", "none")
-      .attr("stroke", "none")
-      .attr("stroke-width", 4)
-      .attr("d", d3.line()
-        .x(function(d) { return x(d.date) })
-        .y(function(d) { return y(d.value) })
-        );
+                                // Add X axis --> it is a date format
+                        var x = d3.scaleTime()
+                          .domain(d3.extent(data_first, function(d) { return d.date; }))
+                          .range([ 0, width ]);
+                        svg3.append("g")
+                        .attr("stroke","#3d6470")
+                          .attr("transform", "translate(0," + (height+5) + ")")
+                          .call(d3.axisBottom(x).ticks(5).tickSizeOuter(0));
+
+                        // Add Y axis
+                        var y = d3.scaleLinear()
+                          .domain( d3.extent(data_first, function(d) { return +d.value; }) )
+                          .range([ height, 0 ]);
+                        svg3.append("g")
+                          .attr("stroke","#3d6470")
+                          .attr("transform", "translate(-5,0)")
+                          .call(d3.axisLeft(y).tickSizeOuter(0));
+
+                        // Add the area
+                        svg3.append("path")
+                          .datum(data_first)
+                          .attr("fill", "#365b65")
+                          .attr("fill-opacity", .3)
+                          .attr("stroke", "none")
+                          .attr("d", d3.area()
+                            .x(function(d) { return x(d.date) })
+                            .y0( height )
+                            .y1(function(d) { return y(d.value) })
+                            )
+
+
+                        // Add the line
+                        svg3.append("path")
+                          .datum(data_first)
+                          .attr("fill", "none")
+                          .attr("stroke", "none")
+                          .attr("stroke-width", 4)
+                          .attr("d", d3.line()
+                            .x(function(d) { return x(d.date) })
+                            .y(function(d) { return y(d.value) })
+                            );
 
 
 
-    // Add the line
-    svg3.selectAll("myCircles")
-      .data(data)
-      .enter()
-      .append("circle")
-        .attr("fill", "#24b9f2")
-        .attr("stroke", "none")
-        .attr("cx", function(d) { return x(d.date) })
-        .attr("cy", function(d) { return y(d.value) })
-        .attr("r", 1.5)
-        .on("mouseover", mouseover)
-          .on("mouseout", mouseOut)
-          .on("mousemove", mousemove);
+                        // Add the line
+                        svg3.selectAll("myCircles")
+                          .data(data_first)
+                          .enter()
+                          .append("circle")
+                            .attr("fill", "#24b9f2")
+                            .attr("stroke", "none")
+                            .attr("cx", function(d) { return x(d.date) })
+                            .attr("cy", function(d) { return y(d.value) })
+                            .attr("r", 1.5)
+                            .on("mouseover", mouseover)
+                              .on("mouseout", mouseOut)
+                              .on("mousemove", mousemove);
 
-          
+                              
 
-    }
+
+                      }
+
+                    }
+                    //page load data visualization
+                    update_second()
+
+                            function update_second()
+                            {
+                                // Add X axis --> it is a date format
+                              var x = d3.scaleTime()
+                                .domain(d3.extent(data, function(d) { return d.date; }))
+                                .range([ 0, width ]);
+                              svg3.append("g")
+                              .attr("stroke","#3d6470")
+                                .attr("transform", "translate(0," + (height+5) + ")")
+                                .call(d3.axisBottom(x).ticks(5).tickSizeOuter(0));
+
+                              // Add Y axis
+                              var y = d3.scaleLinear()
+                                .domain( d3.extent(data, function(d) { return +d.value; }) )
+                                .range([ height, 0 ]);
+                              svg3.append("g")
+                                .attr("stroke","#3d6470")
+                                .attr("transform", "translate(-5,0)")
+                                .call(d3.axisLeft(y).tickSizeOuter(0));
+
+                              // Add the area
+                              svg3.append("path")
+                                .datum(data)
+                                .attr("fill", "#365b65")
+                                .attr("fill-opacity", .3)
+                                .attr("stroke", "none")
+                                .attr("d", d3.area()
+                                  .x(function(d) { return x(d.date) })
+                                  .y0( height )
+                                  .y1(function(d) { return y(d.value) })
+                                  )
+
+
+                                // Add the line
+                                svg3.append("path")
+                                  .datum(data)
+                                  .attr("fill", "none")
+                                  .attr("stroke", "none")
+                                  .attr("stroke-width", 4)
+                                  .attr("d", d3.line()
+                                    .x(function(d) { return x(d.date) })
+                                    .y(function(d) { return y(d.value) })
+                                    );
+
+
+
+                                // Add the line
+                                svg3.selectAll("myCircles")
+                                  .data(data)
+                                  .enter()
+                                  .append("circle")
+                                    .attr("fill", "#24b9f2")
+                                    .attr("stroke", "none")
+                                    .attr("cx", function(d) { return x(d.date) })
+                                    .attr("cy", function(d) { return y(d.value) })
+                                    .attr("r", 1.5)
+                                    .on("mouseover", mouseover)
+                                      .on("mouseout", mouseOut)
+                                      .on("mousemove", mousemove);
+
+                            } //close function
   
 
 
-   
-    var tooltip = d3.select("#tooltip_rented").append("div")
-            .style("z-index","10").style("visibility","hidden").style("margin-left","20px").style("color","#9badb2").text("a simple tooltips");
-            var bisectDate = d3.bisector(function(d){
-              return d.date;
-            }).left;
+                  //tooltip for rented record to show the fading record 
+                    var tooltip = d3.select("#tooltip_rented").append("div")
+                            .style("z-index","10").style("visibility","hidden").style("margin-left","20px").style("color","#9badb2").text("a simple tooltips");
+                            var bisectDate = d3.bisector(function(d){
+                              return d.date;
+                            }).left;
 
 
-          function mouseover()
-          {
-            d3.select(this)
-            .transition()
-            .duration(500)
-            .attr('stroke-width',4);
+                          function mouseover()
+                          {
+                            d3.select(this)
+                            .transition()
+                            .duration(500)
+                            .attr('stroke-width',4);
 
-            
+                          }
 
+                          function mouseOut()
+                          {
+                            d3.select(this)
+                            .transition()
+                            .duration(500)
+                            .attr('stroke-width',2);
 
-            
-          }
+                            return tooltip.style("visibility","hidden");
 
-          function mouseOut()
-          {
-            d3.select(this)
-            .transition()
-            .duration(500)
-            .attr('stroke-width',2);
+                          }
 
-            return tooltip.style("visibility","hidden");
+                          function mousemove()
+                          {
 
-            
-          }
+                            var x0 = x.invert(d3.mouse(this)[0]),
+                            i = bisectDate(data,x0,1),
+                            d0 = data[i-1],
+                            d1 =data[i],
+                            d = x0 - d0.Date > d1.Date - x0 ? d1 :d0;
 
-          function mousemove()
-          {
+                            console.log(d.value);
 
-            
-            var x0 = x.invert(d3.mouse(this)[0]),
-            i = bisectDate(data,x0,1),
-            d0 = data[i-1],
-            d1 =data[i],
-            d = x0 - d0.Date > d1.Date - x0 ? d1 :d0;
+                            tooltip.text("Humidity : "+d.value+"%  ("+d.date+")");
+                            return tooltip.style("visibility","visible");
 
-            console.log(d.value);
+                            tooltip.style("top",(d3.event.pageY-10)+"px")
+                            .style("left",(d3.event.pageX+10)+"px")
+                            .style("background","red");
 
-            tooltip.text("Humality : "+d.value+"("+d.date+")");
-            return tooltip.style("visibility","visible");
+                          }
 
-            tooltip.style("top",(d3.event.pageY-10)+"px")
-            .style("left",(d3.event.pageX+10)+"px")
-            .style("background","red");
+                          
 
+                        
 
-            
-          }
-
-          function update_point()
-          {
-            svg3.append("path")
-      .datum(data_first)
-      .attr("fill", "#365b65")
-      .attr("fill-opacity", .3)
-      .attr("stroke", "none")
-      .attr("d", d3.area()
-        .x(function(d) { return x(d.date) })
-        .y0( height )
-        .y1(function(d) { return y(d.value) })
-        )
-          }
-
-
-         
-
-})
-
-
-function update(selectedGroup)
-{
-  //["All Data", "The Month of November", "The Month of October"]
-  if(selectedGroup == "All Data")
-  {
-    console.log(1);
-
-  }else if(selectedGroup == "The Month of November")
-  {
-    console.log(2);
-    
+                })
 
 
 
-  }else if(selectedGroup == "The Month of October")
-  {
-    console.log(3);
-
-
-  }
-}
-
-d3.select("#selectbutton").on("change", function(d){
-  //recover the option that been chosen
-  var selectedOption = d3.select(this).property("value")
-
-  update(selectedOption)
-})
-
-       
+                //ending of page (data rows counts)
+                var ending = d3.selectAll("#final-ending")
+                            .append("text")
+                              .attr("width", full_width)
+                              .attr("height", full_height)
+                              .style("fill","white")
+                              .text("All Reserved by "+data.length+" Records.");
+                      
     });
 
 
-
-
-
-   
-    
 
 
 </script>
